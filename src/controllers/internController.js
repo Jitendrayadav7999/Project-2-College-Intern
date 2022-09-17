@@ -1,8 +1,9 @@
 const collegeModel = require("../models/collegeModel")
 const internModel = require("../models/internModel")
-const isValid = require("../dataValidation/internCreatValidation")
+const validator = require("validator")
+const validation = require("./validation")
 
-
+let indianNumber = /^((0091)|(\+91)|0?)[6789]{1}\d{9}$/
 
 //===========================================> (Create Intern api) <================================================//
 
@@ -11,41 +12,49 @@ const createIntern = async function (req, res) {
 
         let data = req.body
         //------------------------> (If DON'T have any object in body) <------------------------------//
-        if (Object.keys(data).length == 0) {
-            return res.status(400).send({ status: false, message: "Body should not be empty" })
+        if (!validation.checkvalidResBody(data)) {
+            return res.status(400).send({ status: false, message: "Invalide Request. Please Provide intern Details" })
         }
         //------------------------> (Intern name validation) <------------------------------//
         let { name, mobile, email, collegeName } = data
 
-        let msgName = isValid.isValidsName(name)
-        if (msgName) {
-            return res.status(400).send({ status: false, message: msgName })
+        
+        if (!validation.isValid(name)) {
+            return res.status(400).send({ status: false, message:"Intern name is required" })
         }
-        //------------------------> (Mobile number validation) <------------------------------//
-        let msgMobile = isValid.isValidMobile(mobile)
-        if (msgMobile) {
-            return res.status(400).send({ status: false, message: msgMobile })
+        if (!validation.omlyLetterValid(name)) return res.status(400).send({ status: false, message: "Intern name Should be Letters" })
+         //------------------------> (email Id validation) <---------------------------------------//
+         if (!validation.isValid(email)) {
+            return res.status(400).send({ status: false, message:"Email is required" })
         }
-        //------------------------> (Mobile number uniqe validation) <------------------------------//
-        let checkMobile = await internModel.findOne({ mobile })
-        if (checkMobile) {
-            return res.status(404).send({ status: false, message: "mobile number already exists." })
-        }
-        //------------------------> (email Id validation) <---------------------------------------//
-        let msgEmail = isValid.isValidEmail(email)
-        if (msgEmail) {
-            return res.status(400).send({ status: false, message: msgEmail })
+
+        if (!validator.isEmail(email)) {
+            return res.status(400).send({ status: false, msg: " please Enter valid EmailId" })
         }
         //------------------------> (Email id uniqe validation) <----------------------------------//
         let checkEmail = await internModel.findOne({ email })
         if (checkEmail) {
             return res.status(404).send({ status: false, message: "email already exists." })
         }
-        //------------------------> (college name validation) <--------------------------------------//
-        let msgCollegeName = isValid.isValidcollegeName(collegeName)
-        if (msgCollegeName) {
-            return res.status(400).send({ status: false, message: msgCollegeName })
+        //------------------------> (Mobile number validation) <------------------------------//
+        if (!validation.isValid(mobile)) {
+            return res.status(400).send({ status: false, message:"mobail number is required" })
         }
+
+        if (!(indianNumber.test(mobile))) {
+            return res.status(400).send({ status: false, message:"mobail first number start 6 to 9 or 10 digits" })
+        }
+        //------------------------> (Mobile number uniqe validation) <------------------------------//
+        let checkMobile = await internModel.findOne({ mobile })
+        if (checkMobile) {
+            return res.status(404).send({ status: false, message: "mobile number already exists." })
+        }
+       
+        //------------------------> (college name validation) <--------------------------------------//
+         if (!validation.isValid(collegeName)) {
+            return res.status(400).send({ status: false, message:"collegeName is required" })
+        }
+        if (!validation.omlyLetterValid(collegeName)) return res.status(400).send({ status: false, message: "collegeName Should be Letters" })
         //------------------------> (Find college Object Id by college name) <------------------------//
         let collegeData = await collegeModel.findOne({ name: collegeName })
         if (!collegeData) {
@@ -72,6 +81,5 @@ const createIntern = async function (req, res) {
         return res.status(500).send({ status: false, message: error.message })
     }
 }
-
 
 module.exports = { createIntern }

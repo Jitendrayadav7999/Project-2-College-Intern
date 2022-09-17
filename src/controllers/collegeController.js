@@ -1,18 +1,16 @@
 const collegeModel = require("../models/collegeModel")
 const internModel = require("../models/internModel")
-const isValid = require("../dataValidation/createCollegeValidator")
+const validation =require("./validation")
 
-
-
-//========================================>  (( Create College api call )) <=================================================//
+//========================================>  (( Create College api Controller )) <=================================================//
 
 const createCollege = async function (req, res) {
     try {
 
         let data = req.body
          //------------------------> (If DON'T have any object in body) <------------------------------//
-        if (Object.keys(data).length == 0) {
-            return res.status(400).send({ status: false, message: "Body should not be empty" })
+         if (!validation.checkvalidResBody(data)) {
+            return res.status(400).send({ status: false, message: "Invalide Request. Please Provide College Details" })
         }
 
         let { name, fullName, logoLink } = data
@@ -21,23 +19,32 @@ const createCollege = async function (req, res) {
         if (checkName) {
             return res.status(404).send({ status: false, message: "collge name already exists." })
         }
-         //------------------------> (Name data validation) <------------------------------//
-        let msgName = isValid.isValidName(name)
-        if (msgName) {
-            return res.status(400).send({ status: false, message: msgName })
+         //------------------------> (Name validation) <------------------------------//
+        
+        if (!validation.isValid(name)) {
+            return res.status(400).send({ status: false, message:"college name is required" })
         }
+        if (!validation.omlyLetterValid(name)) return res.status(400).send({ status: false, message: "College name Should be Letters" })
          //------------------------> (Full name validation) <------------------------------//
-        let msgfullName = isValid.isValidfullName(fullName)
-        if (msgfullName) {
-            return res.status(400).send({ status: false, message: msgfullName })
+         
+         if (!validation.isValid(fullName)) {
+            return res.status(400).send({ status: false, message:"college Full name is required" })
         }
+        if (!validation.omlyLetterValid(fullName)) return res.status(400).send({ status: false, message: "College Full name Should be Letters" })
          //------------------------> (logo link validation) <------------------------------//
-        let msgLogoLink = isValid.isValidLogoLink(logoLink)
+         if (!validation.isValid(logoLink)) {
+            return res.status(400).send({ status: false, message:"college LogoLink is required" })
+        }
+        let msgLogoLink = validation.Logolinkvalid(logoLink)
         if (msgLogoLink) {
             return res.status(400).send({ status: false, message: msgLogoLink })
         }
+        if (validation.whitespace(logoLink)) {
+            return res.status(400).send({ status: false, message: "Make sure logoLink should not have space." })  //&& whitespace(name)
+        }
          //------------------------> (College created) <------------------------------//
          await collegeModel.create(data)
+        
         let savedData = {
             "name" : name,
             "fullName" :fullName,
@@ -45,17 +52,13 @@ const createCollege = async function (req, res) {
             "isDeleted" : false
         }
         return res.status(201).send({ status: true, msg: "Data successfully created" ,data: savedData })
-         //------------------------> (END API) <------------------------------//
-
     }
     catch (error) {
         return res.status(500).send({ status: false, message: error.message })
     }
 }
 
-
-//========================================>  (( Gwt Data College api call )) <=================================================//
-
+//========================================>  (( Get  College Data Controller)) <=================================================//
 
 const getCollege = async function (req, res) {
     try {
@@ -63,8 +66,13 @@ const getCollege = async function (req, res) {
         let collegeName = req.query.collegeName
         //------------------------> (If DON'T have any object in body) <------------------------------//
         if (Object.keys(req.query).length == 0) {
-            return res.status(400).send({ status: false, message: "query is required" })
+            return res.status(400).send({ status: false, message: " please Give query params becouse its required" })
         }
+        if (!validation.isValid(collegeName)) {
+            return res.status(400).send({ status: false, message:"collegeName is required" })
+        }
+        
+        if (!validation.omlyLetterValid(collegeName)) return res.status(400).send({ status: false, message: "collegeName Should be Letters" })
         //------------------------> (If college data not found by college name) <------------------------------//
         let College = await collegeModel.findOne({ name: collegeName, isDeleted: false })
         if (!College) {
@@ -84,14 +92,9 @@ const getCollege = async function (req, res) {
             "interns" : interns
         }
         return res.status(200).send({ status: true, data: savedData })
-
-        //------------------------> (END API) <------------------------------//
-
     }catch (error) {
         return res.status(500).send({ status: false, message: error.message })
     }
 }
-
-
 
 module.exports = {createCollege, getCollege}
