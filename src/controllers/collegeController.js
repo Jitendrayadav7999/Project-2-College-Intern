@@ -69,11 +69,7 @@ const getCollege = async function (req, res) {
         if (Object.keys(req.query).length == 0) {
             return res.status(400).send({ status: false, message: " please Give query params becouse its required" })
         }
-        if (!validation.isValid(collegeName)) {
-            return res.status(400).send({ status: false, message:"collegeName is required" })
-        }
-        
-        if (!validation.omlyLetterValid(collegeName)) return res.status(400).send({ status: false, message: "collegeName Should be Letters" })
+       
         //------------------------> (If college data not found by college name) <------------------------------//
         let College = await collegeModel.findOne({ name: collegeName, isDeleted: false })
         if (!College) {
