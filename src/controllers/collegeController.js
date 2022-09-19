@@ -14,17 +14,18 @@ const createCollege = async function (req, res) {
         }
 
         let { name, fullName, logoLink } = data
+          //------------------------> (Name validation) <------------------------------//
+        
+          if (!validation.isValid(name)) {
+            return res.status(400).send({ status: false, message:"college name is required" })
+        }
+        if (!validation.omlyLetterValid(name)) return res.status(400).send({ status: false, message: "College name Should be Letters" })
          //------------------------> (If College name already exists) <------------------------------//
         let checkName = await collegeModel.findOne({ name })
         if (checkName) {
             return res.status(404).send({ status: false, message: "collge name already exists." })
         }
-         //------------------------> (Name validation) <------------------------------//
-        
-        if (!validation.isValid(name)) {
-            return res.status(400).send({ status: false, message:"college name is required" })
-        }
-        if (!validation.omlyLetterValid(name)) return res.status(400).send({ status: false, message: "College name Should be Letters" })
+       
          //------------------------> (Full name validation) <------------------------------//
          
          if (!validation.isValid(fullName)) {
